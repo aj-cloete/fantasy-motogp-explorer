@@ -38,11 +38,11 @@ repos:
     hooks:
         - id: autoflake
           args: [
-                  '--in-place',
                   '--remove-all-unused-imports',
                   '--remove-unused-variable',
                   '--expand-star-imports',
-                  '--remove-duplicate-keys']
+                  '--remove-duplicate-keys',
+                  '--in-place',]
   - repo: https://github.com/pycqa/flake8
     rev: 5.0.4
     hooks:
