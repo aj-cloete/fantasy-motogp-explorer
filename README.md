@@ -14,6 +14,12 @@ you can look in the [pyproject.toml](pyproject.toml) file for the dependencies a
 in your virtual environment
 
 ## Getting Started
+
+### Streamlit app online
+The easiest way to interact with the current version of the tool is to navigate to the 
+[Fantasy MotoGP Explorer]() app online
+
+### Exploring the app locally
 The easiest way to interact with the data is to run the [streamlit](https://streamlit.io/) app 
 (from the root of the repo):
 ```python

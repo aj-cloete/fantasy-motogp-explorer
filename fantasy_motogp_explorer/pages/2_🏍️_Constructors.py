@@ -2,6 +2,11 @@ import streamlit as st
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 
 from fantasy import FantasyStats
+from common.resources import logo
+
+st.set_page_config(layout="wide")
+
+logo()
 
 st.markdown("# Constructors 🏍️")
 # st.sidebar.markdown("# Constructors 🏍️")
