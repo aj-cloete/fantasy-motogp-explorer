@@ -1,0 +1,76 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        name: "Enforce LF newlines on most files"
+        args:
+          - "--fix=lf"
+        # Exclude files with "crlf" in their names.
+        exclude: "crlf"
+      - id: mixed-line-ending
+        name: "Enforce CRLF newlines on files named '*crlf*'"
+        args:
+          - "--fix=crlf"
+        files: "crlf"
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: pretty-format-json
+        args:
+          - "--autofix"
+          - "--indent=2"
+          - "--no-sort-keys"
+          - "--no-ensure-ascii"
+        exclude: "invalid-syntax.json|tests/fake-repo-bad-json/cookiecutter.json|tests/fake-repo/cookiecutter.json"
+      - id: check-toml
+      - id: check-xml
+      - id: check-yaml
+        exclude: "not_rendered.yml|invalid-config.yaml|invalid-config-w-multiple-docs.yaml"
+  - repo: https://github.com/pycqa/autoflake
+    rev: v2.0.0
+    hooks:
+        - id: autoflake
+          args: [
+                  '--in-place',
+                  '--remove-all-unused-imports',
+                  '--remove-unused-variable',
+                  '--expand-star-imports',
+                  '--remove-duplicate-keys']
+  - repo: https://github.com/pycqa/flake8
+    rev: 5.0.4
+    hooks:
+      -   id: flake8
+          additional_dependencies: [
+                  flake8-print,
+                  flake8-deprecated,
+                  flake8-pep3101,
+                  flake8-quotes,
+                  flake8-string-format,
+                  flake8-tidy-imports,
+          ]
+          args: [
+                  '--max-line-length=120',
+                  '--extend-ignore=E501,E302,E203,W605,Q000'
+          ]
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+    -   id: black
+        args: [
+        '--line-length=120',
+        ]
+  - repo: https://github.com/pycqa/isort
+    rev: 5.11.5
+    hooks:
+    -   id: isort
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.9.0
+    hooks:
+    -   id: shellcheck
