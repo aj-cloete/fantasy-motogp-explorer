@@ -1,9 +1,10 @@
-# fantasy-motogp-helper
+# Fantasy MotoGP Explorer
 Tools to explore Fantasy MotoGP data
 
 ## Installation
-More options might be added later.  
-For now, you will have to clone the repo and then install
+
+### Using poetry
+Clone the repo and then install
 [poetry](https://python-poetry.org/docs#installing-with-pipx).  
 You can install the poetry environment using `poetry install` within the root of the repo
 
@@ -16,10 +17,10 @@ in your virtual environment
 The easiest way to interact with the data is to run the [streamlit](https://streamlit.io/) app 
 (from the root of the repo):
 ```python
-streamlit run fantasy_motogp_helper/Welcome.py
+streamlit run fantasy_motogp_explorer/Welcome.py
 ```
 
 ## Contributing
 Feel free to fork and create pull requests!
 
-Please remember to run `pre-commit install` for linting and for cleaner pull requests.
+> Please remember to run `pre-commit install` for linting and for cleaner pull requests.
