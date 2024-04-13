@@ -1,5 +1,4 @@
 import streamlit as st
-
 from common.resources import logo
 
 st.set_page_config(layout="wide")

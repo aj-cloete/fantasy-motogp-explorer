@@ -1,37 +1,31 @@
 import json
 import logging
-from functools import cached_property
 import os
+from datetime import datetime
+from functools import cached_property
 
 import pandas as pd
 import requests
-from pandas._libs.tslibs.parsing import DateParseError
-
 from data_models.constructors import Constructor
 from data_models.riders import Rider
 from data_models.teams import Team
 from data_models.weekends import Weekend
-from urls import (
-    riders_url as _riders,
-    squads_url as _squads,
-    constructors_url as _constructors,
-    events_url as _events
-)
-from datetime import datetime
+from urls import constructors_url as _constructors
+from urls import events_url as _events
+from urls import riders_url as _riders
+from urls import squads_url as _squads
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
 
 
 class Base:
     def __init__(
-            self,
-            url: str,
-            name: str,
-            base_class: type,
+        self,
+        url: str,
+        name: str,
+        base_class: type,
     ):
         self._url = url
         self._name = name
@@ -52,7 +46,7 @@ class Base:
             with open(filename, "r") as f:
                 data = json.loads(f.read())
             self._log.info(f"Using {self._name+' '}data from disk: {filename}")
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             self._log.info(f"Getting {self._name+' '}stats from website")
             data = requests.get(self._url).json()
             with open(filename, "w") as f:
@@ -70,8 +64,8 @@ class Base:
             if str(df[col].dtype) != "object":
                 continue
             try:
-                df[col] = pd.to_datetime(df[col], utc=True)
-            except (DateParseError, TypeError):
+                df[col] = pd.to_datetime(df[col], utc=True, format="%Y-%m-%d %H:%M:%S")
+            except ValueError:
                 pass
         return df
 
@@ -80,7 +74,22 @@ class BaseStats(Base):
 
     @property
     def info(self):
-        return self._info.drop(columns=["stats", "_stats"])
+        ret = (
+            self._info
+            .drop(columns=["stats", "_stats", "_cost_millions"])
+            .rename(errors="ignore", columns={
+                "first_name": "Name",
+                "name": "Name",
+                "last_name": "Surname",
+                "country": "From",
+                "number": "#",
+                "status": "Status",
+                "cost": "Cost $M",
+                "rider": "Rider",
+                "num_riders": "Riders",
+            })
+        )
+        return ret
 
     @property
     def _stats(self):
@@ -90,7 +99,18 @@ class BaseStats(Base):
 
     @property
     def stats(self):
-        return self._stats.drop(columns=["prices", "_prices", "events", "_events"])
+        identifier = "Rider" if "Rider" in self.info.columns else "Name"
+        ret = (
+            self.info[[identifier, "Cost $M"]]
+            .join(self._stats)
+            .drop(columns=["prices", "_prices", "events", "_events"], errors="ignore")
+               )
+        ret.columns = [col.replace("_", " ").title().replace("Gp", "GP") for col in ret.columns]
+        return (
+                ret.drop(columns=["Total Fantasy Points"], errors="ignore")
+                .rename(errors="ignore", columns={"Total Points": "Total Fantasy Points"})
+                .sort_values("Total Fantasy Points", ascending=False)
+        )
 
     @property
     def history(self):
@@ -99,61 +119,51 @@ class BaseStats(Base):
         dfs = []
         for event_id in df:
             df_event = pd.json_normalize(df[event_id])
-            df_event["event_id"] = event_id+1
             df_event.index = self._info.index
             dfs.append(df_event)
-        df_events = pd.concat(dfs)
-        return df_events.sort_index()
+        df_events = pd.concat(dfs).sort_values("event_num")
+        identifier = "Rider" if "Rider" in self.info.columns else "Name"
+        df_events.insert(0, identifier, self.info[identifier])
+        df_events.columns = [x.replace("_", " ").title() for x in df_events.columns]
+        return df_events
 
     @property
     def complete_info(self):
-        return self.info.join(self.stats)
+        complete = self.info.join(self.stats.drop(columns=["Rider", "Name", "Num riders"], errors="ignore"))
+        return complete
 
     @property
     def all_data(self):
-        return self.info.merge(
-            self.stats,
-            how="left",
-            left_index=True,
-            right_index=True
-        ).merge(
-            self.history,
-            how="left",
-            left_index=True,
-            right_index=True)
+        all_data = (
+            self.info
+            .merge(self.stats, how="left", left_index=True, right_index=True)
+            .merge(self.history, how="left", left_index=True, right_index=True
+            )
+        ).sort_values("Event Num")
+        return all_data
 
 
 class RiderStats(BaseStats):
-    def __init__(
-            self,
-            url: str = _riders,
-            name: str = "rider",
-            base_class: type = Rider
-    ):
+    def __init__(self, url: str = _riders, name: str = "rider", base_class: type = Rider):
         super().__init__(url=url, name=name, base_class=base_class)
 
     @property
     def basic_info(self):
-        return super().info.drop(columns=["squad_id", "constructor_id", "team_id"])
+        basic_data = (
+            super().info.sort_values("Cost $M", ascending=False)
+            .drop(columns=["squad_id", "constructor_id", "team_id"])
+        )
+        basic_data.columns = [x.replace("_", " ").title() for x in basic_data.columns]
+        return basic_data[["Rider"]+[col for col in basic_data.columns if col != "Rider"]]
 
 
 class ConstructorStats(BaseStats):
-    def __init__(
-            self,
-            url: str = _constructors,
-            name: str = "constructor",
-            base_class: type = Constructor
-    ):
+    def __init__(self, url: str = _constructors, name: str = "constructor", base_class: type = Constructor):
         super().__init__(url=url, name=name, base_class=base_class)
 
 
 class TeamStats(BaseStats):
-    def __init__(
-            self,
-            url: str = _squads,
-            name: str = "team",
-            base_class: type = Team
-    ):
+    def __init__(self, url: str = _squads, name: str = "team", base_class: type = Team):
         super().__init__(url=url, name=name, base_class=base_class)
 
     @property
@@ -162,16 +172,21 @@ class TeamStats(BaseStats):
 
     @property
     def basic_info(self):
-        return self.info.drop(columns="is_wildcard")
+        basic_data = (
+            self.info.sort_values("Cost $M", ascending=False)
+            .rename(
+                columns={
+                    "num_riders": "Riders",
+                    "cost": "Cost ($M)",
+                    "is_wildcard": "wildcard"}
+            )
+        )
+        basic_data.columns = [x.replace("_", " ").title() for x in basic_data.columns]
+        return basic_data
 
 
 class Weekends(Base):
-    def __init__(
-            self,
-            url: str = _events,
-            name: str = "weekend",
-            base_class: type = Weekend
-    ):
+    def __init__(self, url: str = _events, name: str = "weekend", base_class: type = Weekend):
         super().__init__(url=url, name=name, base_class=base_class)
 
     @property
@@ -189,7 +204,7 @@ class Weekends(Base):
         dfs = []
         for event_order in events:
             event = pd.json_normalize(events[event_order])
-            event["weekend_event"] = event_order+1
+            event["weekend_event"] = event_order + 1
             event.index = events.index
             dfs.append(event)
         ret = pd.concat(dfs).drop(columns=["_start", "_end"])
@@ -217,3 +232,13 @@ class FantasyStats:
     @cached_property
     def weekends(self):
         return Weekends()
+
+    @cached_property
+    def rider_full_data(self):
+        constructor = self.constructors.info.rename(columns={"name": "constructor"})
+        team = self.teams.info.rename(columns={"name": "team"})
+        full_data = self.riders.all_data.merge(
+            constructor.constructor, left_on="constructor_id", right_index=True
+        ).merge(team.team, left_on="team_id", right_index=True)
+        ret = full_data.drop(columns=["constructor_id", "squad_id", "team_id"])
+        return ret

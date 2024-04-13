@@ -16,9 +16,17 @@ class RiderEventStats:
     qualifying_vs_final_position_points: float
     event_num: int
     points: float
-    fastest_lap: int
     race_time: str
     race_time_float: float
+    fastest_lap: int
+    finished: bool = field(init=False)
+    had_fastest_lap: bool = field(init=False)
+
+    def __post_init__(self):
+        self.final_position = self.final_position if self.final_points else -99
+        self.finished = self.final_position > 0
+        self.had_fastest_lap = self.fastest_lap > 0
+        self.race_time = str(self.race_time)
 
 
 @dataclass
@@ -79,17 +87,18 @@ class RiderStats:
 class _Rider:
     first_name: str
     last_name: str
-    cost: int
     country: str
     number: int
     status: str
     id: int
     constructor_id: int
     squad_id: int
+    cost: float
     stats: RiderStats
     _stats: RiderStats = field(init=False, repr=False)
     team_id: int = field(init=False)
-    short_name: str = field(init=False)
+    rider: str = field(init=False)
+    _cost_millions: int = field(init=False)
 
     @property
     def stats(self):
@@ -99,6 +108,14 @@ class _Rider:
     def stats(self, stats: dict):
         self._stats = RiderStats(**stats)
 
+    @property
+    def cost(self):
+        return round(float(self._cost_millions) / 1000000, 2)
+
+    @cost.setter
+    def cost(self, cost: int):
+        self._cost_millions = cost
+
 
 class Rider(_Rider):
     @property
@@ -106,5 +123,5 @@ class Rider(_Rider):
         return self.squad_id
 
     @property
-    def short_name(self):
+    def rider(self):
         return f"{self.first_name[0]} {self.last_name[:3]}".upper()
