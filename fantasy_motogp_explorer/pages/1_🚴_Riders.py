@@ -2,11 +2,10 @@ import streamlit as st
 from common.resources import logo
 from fantasy import FantasyStats
 from st_aggrid import AgGrid, GridOptionsBuilder
-from streamlit_extras.dataframe_explorer import dataframe_explorer
 
 st.set_page_config(
     page_icon="https://www.motogp.com/resources/v6.3.5/i/svg-files/elements/motogp-logo.svg",
-    # layout="wide",
+    layout="wide",
 )
 
 logo()
@@ -20,67 +19,34 @@ with st.spinner("Loading data"):
     data = FantasyStats().riders
 
 with t_basic:
-    gb = GridOptionsBuilder.from_dataframe(
-        data.basic_info,
-        resizable=True,
-        wrapHeaderText=True,
-        autoHeaderHeight=True
-    )
+    gb = GridOptionsBuilder.from_dataframe(data.basic_info, resizable=True, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_side_bar()
     gb.configure_first_column_as_index(resizable=True)
     go = gb.build()
     for col_def in go["columnDefs"]:
         name = col_def["field"]
-        col_def["width"] = min(95, 40+max([len(x)*7 for x in name.split(" ")]))
-    grid = AgGrid(
-        data.basic_info,
-        go,
-        key="basic",
-        update_on=["stateChanged"],
-        fit_columns_on_grid_load=True
-    )
+        col_def["width"] = min(95, 40 + max([len(x) * 7 for x in name.split(" ")]))
+    grid = AgGrid(data.basic_info, go, key="basic", update_on=["stateChanged"], fit_columns_on_grid_load=True)
 
 with t_stats:
-    gb = GridOptionsBuilder.from_dataframe(
-        data.stats,
-        resizable=True,
-        wrapHeaderText=True,
-        autoHeaderHeight=True
-    )
+    gb = GridOptionsBuilder.from_dataframe(data.stats, resizable=True, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_side_bar()
     gb.configure_first_column_as_index(resizable=True)
     go = gb.build()
     for col_def in go["columnDefs"]:
         name = col_def["field"]
-        col_def["width"] = min(95, 40+max([len(x)*7 for x in name.split(" ")]))
-    grid = AgGrid(
-        data.stats,
-        go,
-        key="stats",
-        fit_columns_on_grid_load=True,
-        update_on=["stateChanged"]
-    )
+        col_def["width"] = min(95, 40 + max([len(x) * 7 for x in name.split(" ")]))
+    grid = AgGrid(data.stats, go, key="stats", fit_columns_on_grid_load=True, update_on=["stateChanged"])
 
 with t_history:
-    gb = GridOptionsBuilder.from_dataframe(
-        data.history,
-        resizable=True,
-        wrapHeaderText=True,
-        autoHeaderHeight=True
-    )
+    gb = GridOptionsBuilder.from_dataframe(data.history, resizable=True, wrapHeaderText=True, autoHeaderHeight=True)
     gb.configure_side_bar()
     gb.configure_first_column_as_index(resizable=True)
     go = gb.build()
     for col_def in go["columnDefs"]:
         name = col_def["field"]
-        col_def["width"] = min(95, 40+max([len(x)*7 for x in name.split(" ")]))
-    grid = AgGrid(
-        data.history,
-        go,
-        key="history",
-        fit_columns_on_grid_load=True,
-        update_on=["stateChanged"]
-    )
+        col_def["width"] = min(95, 40 + max([len(x) * 7 for x in name.split(" ")]))
+    grid = AgGrid(data.history, go, key="history", fit_columns_on_grid_load=True, update_on=["stateChanged"])
 
 # with t_explore:
 #     df = data.basic_info
