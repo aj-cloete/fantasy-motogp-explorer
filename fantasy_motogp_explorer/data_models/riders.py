@@ -1,3 +1,4 @@
+import inspect
 from dataclasses import dataclass, field
 
 
@@ -50,6 +51,12 @@ class RiderStats:
     _prices: list[int] = field(init=False, repr=False)
     _events: list[RiderEventStats] = field(init=False, repr=False)
 
+    @classmethod
+    def from_dict(cls, env):
+        default_env = {k: None for k in inspect.signature(cls).parameters}
+        default_env.update(env)
+        return cls(**{k: v for k, v in default_env.items() if k in inspect.signature(cls).parameters})
+
     @property
     def prices(self):
         return self._prices
@@ -100,13 +107,19 @@ class _Rider:
     rider: str = field(init=False)
     _cost_millions: int = field(init=False)
 
+    @classmethod
+    def from_dict(cls, env):
+        default_env = {k: None for k in inspect.signature(cls).parameters}
+        default_env.update(env)
+        return cls(**{k: v for k, v in default_env.items() if k in inspect.signature(cls).parameters})
+
     @property
     def stats(self):
         return self._stats
 
     @stats.setter
     def stats(self, stats: dict):
-        self._stats = RiderStats(**stats)
+        self._stats = RiderStats.from_dict(stats)
 
     @property
     def cost(self):

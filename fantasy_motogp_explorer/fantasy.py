@@ -55,7 +55,7 @@ class Base:
 
     @cached_property
     def raw_info(self):
-        return [self._base_class(**datum) for datum in self.website_json]
+        return [self._base_class.from_dict(datum) for datum in self.website_json]
 
     @cached_property
     def _info(self):
@@ -74,10 +74,9 @@ class BaseStats(Base):
 
     @property
     def info(self):
-        ret = (
-            self._info
-            .drop(columns=["stats", "_stats", "_cost_millions"])
-            .rename(errors="ignore", columns={
+        ret = self._info.drop(columns=["stats", "_stats", "_cost_millions"]).rename(
+            errors="ignore",
+            columns={
                 "first_name": "Name",
                 "name": "Name",
                 "last_name": "Surname",
@@ -87,7 +86,7 @@ class BaseStats(Base):
                 "cost": "Cost $M",
                 "rider": "Rider",
                 "num_riders": "Riders",
-            })
+            },
         )
         return ret
 
@@ -104,12 +103,12 @@ class BaseStats(Base):
             self.info[[identifier, "Cost $M"]]
             .join(self._stats)
             .drop(columns=["prices", "_prices", "events", "_events"], errors="ignore")
-               )
+        )
         ret.columns = [col.replace("_", " ").title().replace("Gp", "GP") for col in ret.columns]
         return (
-                ret.drop(columns=["Total Fantasy Points"], errors="ignore")
-                .rename(errors="ignore", columns={"Total Points": "Total Fantasy Points"})
-                .sort_values("Total Fantasy Points", ascending=False)
+            ret.drop(columns=["Total Fantasy Points"], errors="ignore")
+            .rename(errors="ignore", columns={"Total Points": "Total Fantasy Points"})
+            .sort_values("Total Fantasy Points", ascending=False)
         )
 
     @property
@@ -135,9 +134,8 @@ class BaseStats(Base):
     @property
     def all_data(self):
         all_data = (
-            self.info
-            .merge(self.stats, how="left", left_index=True, right_index=True)
-            .merge(self.history, how="left", left_index=True, right_index=True
+            self.info.merge(self.stats, how="left", left_index=True, right_index=True).merge(
+                self.history, how="left", left_index=True, right_index=True
             )
         ).sort_values("Event Num")
         return all_data
@@ -150,11 +148,10 @@ class RiderStats(BaseStats):
     @property
     def basic_info(self):
         basic_data = (
-            super().info.sort_values("Cost $M", ascending=False)
-            .drop(columns=["squad_id", "constructor_id", "team_id"])
+            super().info.sort_values("Cost $M", ascending=False).drop(columns=["squad_id", "constructor_id", "team_id"])
         )
         basic_data.columns = [x.replace("_", " ").title() for x in basic_data.columns]
-        return basic_data[["Rider"]+[col for col in basic_data.columns if col != "Rider"]]
+        return basic_data[["Rider"] + [col for col in basic_data.columns if col != "Rider"]]
 
 
 class ConstructorStats(BaseStats):
@@ -172,14 +169,8 @@ class TeamStats(BaseStats):
 
     @property
     def basic_info(self):
-        basic_data = (
-            self.info.sort_values("Cost $M", ascending=False)
-            .rename(
-                columns={
-                    "num_riders": "Riders",
-                    "cost": "Cost ($M)",
-                    "is_wildcard": "wildcard"}
-            )
+        basic_data = self.info.sort_values("Cost $M", ascending=False).rename(
+            columns={"num_riders": "Riders", "cost": "Cost ($M)", "is_wildcard": "wildcard"}
         )
         basic_data.columns = [x.replace("_", " ").title() for x in basic_data.columns]
         return basic_data

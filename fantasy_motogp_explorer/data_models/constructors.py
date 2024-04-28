@@ -1,3 +1,4 @@
+import inspect
 from dataclasses import dataclass, field
 
 from data_models.common import Stats
@@ -17,6 +18,12 @@ class Constructor:
     stats: ConstructorStats
     _stats: ConstructorStats = field(init=False, repr=False)
     _cost_millions: int = field(init=False, repr=False)
+
+    @classmethod
+    def from_dict(cls, env):
+        default_env = {k: None for k in inspect.signature(cls).parameters}
+        default_env.update(env)
+        return cls(**{k: v for k, v in default_env.items() if k in inspect.signature(cls).parameters})
 
     @property
     def stats(self):

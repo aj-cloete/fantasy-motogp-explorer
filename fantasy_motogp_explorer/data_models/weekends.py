@@ -1,3 +1,4 @@
+import inspect
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -12,6 +13,12 @@ class Event:
     end: datetime
     _start: datetime = field(init=False, repr=False)
     _end: datetime = field(init=False, repr=False)
+
+    @classmethod
+    def from_dict(cls, env):
+        default_env = {k: None for k in inspect.signature(cls).parameters}
+        default_env.update(env)
+        return cls(**{k: v for k, v in default_env.items() if k in inspect.signature(cls).parameters})
 
     @property
     def start(self):
@@ -46,6 +53,12 @@ class Weekend:
     _start: datetime = field(init=False, repr=False)
     _end: datetime = field(init=False, repr=False)
     _races: list[Event] = field(init=False, repr=False)
+
+    @classmethod
+    def from_dict(cls, env):
+        default_env = {k: None for k in inspect.signature(cls).parameters}
+        default_env.update(env)
+        return cls(**{k: v for k, v in default_env.items() if k in inspect.signature(cls).parameters})
 
     @property
     def start(self):
